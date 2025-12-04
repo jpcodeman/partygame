@@ -377,7 +377,7 @@ export default function TeamView() {
           transition: background 0.5s ease;
         }
       `}</style>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', marginTop: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', marginTop: '24px', flexFlow: 'wrap-reverse' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <h1 style={{ marginBottom: 0 }}>{teamName}</h1>
@@ -385,12 +385,7 @@ export default function TeamView() {
               const myTeam = teams.find(t => t._id === teamId);
               if (myTeam) {
                 return (
-                  <div style={{ 
-                    fontSize: '32px',
-                    fontWeight: 'bold',
-                    color: '#3046a5ff',
-                    textShadow: '0 2px 8px rgba(48, 70, 165, 0.3)'
-                  }}>
+                  <div className='score-text'>
                     {myTeam.score}<span style={{ fontSize: '16px', marginLeft: '4px' }}>pts</span>
                   </div>
                 );
@@ -400,7 +395,8 @@ export default function TeamView() {
           </div>
           <div style={{ color: '#666' }}>Game: {game.gameCode}</div>
         </div>
-        <button onClick={() => router.push('/')} className="secondary">
+        {/* dont let this button be pushed off the screen */}
+        <button onClick={() => router.push('/')} className="secondary " style={{ marginLeft: 'auto' }}>
           Exit
         </button>
       </div>
