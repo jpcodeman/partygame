@@ -1,0 +1,19 @@
+{
+  "name": "party-game",
+  "version": "1.0.0",
+  "description": "Get-to-know-you party game",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "mongoose": "^8.0.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "csv-parser": "^3.0.0"
+  }
+}
