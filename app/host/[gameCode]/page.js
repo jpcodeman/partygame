@@ -57,7 +57,7 @@ export default function HostView() {
   useEffect(() => {
     if (currentRound && !currentRound.finalized && countdown === null && game) {
       // Start countdown when round loads - 2 minutes for level 3, 60 seconds for others
-      const initialTime = game.currentLevel !== 3 ? 30 : currentRound === 1 ? 60 : 120;
+      const initialTime = game.currentLevel !== 3 ? 30 : game.currentRound === 1 ? 60 : 120;
       setCountdown(initialTime);
     }
 
