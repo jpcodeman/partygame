@@ -249,6 +249,11 @@ h3 {
   text-shadow: 0 2px 8px rgba(48, 70, 165, 0.3);
 }
 
+.game-complete {
+  font-size: 48px;
+  margin-bottom: 40px;
+}
+
 @media (max-width: 768px) {
   .grid-2 {
     grid-template-columns: 1fr;
@@ -273,5 +278,10 @@ h3 {
     color: #3046a5ff;
     text-shadow: 0 2px 8px rgba(48, 70, 165, 0.3);
     padding-right: 4px;
+  }
+
+  .game-complete {
+    font-size: 30px;
+    margin-bottom: 20px;
   }
 }

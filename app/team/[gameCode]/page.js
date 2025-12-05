@@ -227,14 +227,15 @@ export default function TeamView() {
           }
         `}</style>
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <h1 style={{ fontSize: '48px', marginBottom: '40px' }}>🎉 Game Complete! 🎉</h1>
+          {/* Make Game Complete smaller on small screens */}
+          <h1 className='game-complete'>🎉 Game Complete! 🎉</h1>
           
           {/* Your Team Result */}
           <div className="card" style={{ 
             background: isWinner 
               ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)'
               : myRank === 2
-                ? 'linear-gradient(135deg, #f9f9faff 0%, #a9e5f4ff 100%)'
+                ? 'linear-gradient(135deg, #f1f1ffff 0%, #a9e5f4ff 100%)'
                 : 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
             border: isWinner ? '4px solid #ffa500' : myRank === 2 ? '3px solid #c0c0c0' : '2px solid #dee2e6',
             boxShadow: isWinner ? '0 8px 32px rgba(255, 215, 0, 0.4)' : '0 4px 15px rgba(0,0,0,0.1)',
@@ -295,7 +296,7 @@ export default function TeamView() {
                       ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                       : rank === 1 
                         ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)'
-                        : 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                        : rank === 2 ? 'linear-gradient(135deg, #f8f9fa 0%, #a9e5f4ff 100%)' : 'linear-gradient(135deg, #f1f1ffff 0%, #e9ecef 100%)',
                     borderRadius: '12px',
                     border: isMyTeam ? '3px solid #4338ca' : rank === 1 ? '3px solid #ffa500' : '2px solid #dee2e6',
                     display: 'flex',

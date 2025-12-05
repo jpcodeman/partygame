@@ -14,6 +14,9 @@ export default function HostView() {
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
   const [gameComplete, setGameComplete] = useState(false);
+  const [countdown, setCountdown] = useState(null);
+  const [randomizedLevel3Answers, setRandomizedLevel3Answers] = useState([]);
+  const [isPaused, setIsPaused] = useState(false);
 
   const loadGame = async () => {
     try {
@@ -27,6 +30,13 @@ export default function HostView() {
         // If round is finalized and results are included, set them
         if (data.results) {
           setResults(data.results);
+        }
+        // Randomize Level 3 answers once when round loads
+        if (data.game?.currentLevel === 3 && data.currentRound?.options) {
+          const shuffled = [...data.currentRound.options]
+            .map(match => match.answer)
+            .sort(() => Math.random() - 0.5);
+          setRandomizedLevel3Answers(shuffled);
         }
         setError('');
       } else {
@@ -43,6 +53,25 @@ export default function HostView() {
     }
   }, [gameCode]);
 
+  // Countdown timer effect
+  useEffect(() => {
+    if (currentRound && !currentRound.finalized && countdown === null && game) {
+      // Start countdown when round loads - 2 minutes for level 3, 60 seconds for others
+      const initialTime = game.currentLevel !== 3 ? 30 : currentRound === 1 ? 60 : 120;
+      setCountdown(initialTime);
+    }
+
+    if (countdown !== null && countdown > 0 && !currentRound?.finalized && !isPaused) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (countdown === 0 && !currentRound?.finalized) {
+      // Auto-finalize when countdown reaches 0
+      handleFinalize();
+    }
+  }, [countdown, currentRound, game, isPaused]);
+
   const handleFinalize = async () => {
     try {
       const response = await fetch('/api/games/finalize', {
@@ -55,6 +84,8 @@ export default function HostView() {
 
       if (response.ok) {
         setResults(data);
+        setCountdown(null);
+        setIsPaused(false);
         loadGame();
       } else {
         setError(data.message);
@@ -76,6 +107,8 @@ export default function HostView() {
 
       if (response.ok) {
         setResults(null);
+        setCountdown(null); // Clear countdown, let useEffect set it based on new level
+        setIsPaused(false);
         loadGame();
       } else {
         if (data.message.includes('complete')) {
@@ -173,10 +206,10 @@ export default function HostView() {
                     <div key={team._id} style={{
                       padding: '20px',
                       background: rank === 2 
-                        ? 'linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%)' 
+                        ? 'linear-gradient(135deg, #e9ecef 0%, #b9eaf7ff 100%)' 
                         : 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
                       borderRadius: '12px',
-                      border: rank === 2 ? '3px solid #c0c0c0' : '2px solid #dee2e6',
+                      border: rank === 2 ? '3px solid #c6dbecff' : '2px solid #dee2e6',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
@@ -262,6 +295,56 @@ export default function HostView() {
         </div>
       </div>
 
+      {!currentRound.finalized && countdown !== null && (
+        <div style={{ 
+          textAlign: 'center', 
+          margin: '12px 0',
+          padding: '12px',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '48px',
+          background: 'rgba(255,255,255,0.1)',
+          borderRadius: '12px'
+        }}>
+          <div style={{ 
+            fontSize: '72px', 
+            fontWeight: 'bold', 
+            color: isPaused ? '#ffffff88' : countdown <= 10 ?  '#ff4444':  'white',
+            textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+            animation: countdown <= 10 && !isPaused ? 'pulse 1s infinite' : 'none'
+          }}>
+            {game.currentLevel === 3 && countdown >= 60 
+              ? `${Math.floor(countdown / 60)}:${(countdown % 60).toString().padStart(2, '0')}`
+              : <>{countdown}<span style={{ fontSize: '40px', marginLeft: '12px' }}>s</span></>
+            }
+          </div>
+          <button 
+            onClick={() => setIsPaused(!isPaused)}
+            style={{
+              background: 'rgba(255, 255, 255, 0.9)',
+              color: '#333',
+              padding: '8px 24px',
+              fontSize: '14px',
+              fontWeight: '600',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+            }}
+          >
+            {isPaused ? '▶ Resume' : '⏸ Pause'}
+          </button>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+      `}</style>
+
       <div className="card">
         <h2>{currentRound.questionText}</h2>
 
@@ -338,20 +421,17 @@ export default function HostView() {
                 <div>
                   <h4 style={{ fontSize: '16px', marginBottom: '8px', color: '#667eea' }}>Answers:</h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {[...currentRound.options]
-                      .map(match => match.answer)
-                      .sort(() => Math.random() - 0.5)
-                      .map((answer, i) => (
-                        <div key={i} style={{
-                          padding: '12px',
-                          background: 'white',
-                          border: '2px solid #ddd',
-                          borderRadius: '8px',
-                          fontSize: '16px'
-                        }}>
-                          {answer}
-                        </div>
-                      ))}
+                    {randomizedLevel3Answers.map((answer, i) => (
+                      <div key={i} style={{
+                        padding: '12px',
+                        background: 'white',
+                        border: '2px solid #ddd',
+                        borderRadius: '8px',
+                        fontSize: '16px'
+                      }}>
+                        {answer}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </>
@@ -441,7 +521,7 @@ export default function HostView() {
       </div>
 
       {results && (
-        <div className="card" style={{ background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)', border: '3px solid #10b981' }}>
+        <div className="card" style={{ background: 'linear-gradient(135deg, #79ffbaff 0%, #d6f0e4ff 100%)', border: '3px solid #10b981' }}>
           <h2>
             Correct Answer: {
               Array.isArray(results.correctGuess) 
@@ -467,7 +547,7 @@ export default function HostView() {
                   Guess: {Array.isArray(result.guess) ? 'See matches' : result.guess}
                 </div>
               </div>
-              <div style={{ fontSize: '28px', fontWeight: 'bold', color: result.isCorrect ? '#059669' : '#dc2626' }}>
+              <div style={{ fontSize: '28px', fontWeight: 'bold', color: result.isCorrect ? '#05825bff' : '#ba1f1fff' }}>
                 +{result.points}
               </div>
             </div>
