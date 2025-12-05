@@ -10,6 +10,7 @@ export default function AdminPanel() {
   const [datasets, setDatasets] = useState([]);
   const [selectedDatasetId, setSelectedDatasetId] = useState('');
   const [selectedDataset, setSelectedDataset] = useState(null);
+  const [games, setGames] = useState([]);
   const [newDatasetName, setNewDatasetName] = useState('');
   const [csvData, setCsvData] = useState('');
   const [editingQuestion, setEditingQuestion] = useState(null);
@@ -100,9 +101,24 @@ export default function AdminPanel() {
         setSelectedDataset(data);
         setEditingQuestion(null);
         setEditingPerson(null);
+        loadGames(id);
       }
     } catch (err) {
       setError('Error loading dataset');
+    }
+  };
+
+  const loadGames = async (datasetId) => {
+    try {
+      const response = await fetch(`/api/games/by-dataset?datasetId=${datasetId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setGames(data);
+      }
+    } catch (err) {
+      console.error('Error loading games:', err);
     }
   };
 
@@ -113,6 +129,7 @@ export default function AdminPanel() {
       loadDataset(id);
     } else {
       setSelectedDataset(null);
+      setGames([]);
       setEditingQuestion(null);
       setEditingPerson(null);
     }
@@ -250,11 +267,39 @@ export default function AdminPanel() {
 
       if (response.ok) {
         alert(`Game created! Game Code: ${data.gameCode}`);
+        loadGames(selectedDataset._id);
       } else {
         setError(data.message);
       }
     } catch (err) {
       setError('Error creating game');
+    }
+  };
+
+  const forceReleaseHost = async (gameCode) => {
+    if (!confirm(`Are you sure you want to release the host key for game ${gameCode}?`)) return;
+
+    try {
+      const response = await fetch('/api/games/force-release-host', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify({ gameCode })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccess('Host key released successfully');
+        loadGames(selectedDataset._id);
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(data.message);
+      }
+    } catch (err) {
+      setError('Error releasing host key');
     }
   };
 
@@ -345,6 +390,93 @@ export default function AdminPanel() {
           <div className="flex" style={{ marginTop: '12px' }}>
             <button onClick={createGame}>Create Game</button>
             <button onClick={() => deleteDataset(selectedDataset._id)} className="danger">Delete Dataset</button>
+          </div>
+        </div>
+      )}
+
+      {selectedDataset && games.length > 0 && (
+        <div className="card">
+          <h2>Games ({games.length})</h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '16px' }}>
+              <thead>
+                <tr style={{ background: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
+                  <th style={{ padding: '12px', textAlign: 'left' }}>Game Code</th>
+                  <th style={{ padding: '12px', textAlign: 'center' }}>Progress</th>
+                  <th style={{ padding: '12px', textAlign: 'center' }}>Status</th>
+                  <th style={{ padding: '12px', textAlign: 'center' }}>Hosted</th>
+                  <th style={{ padding: '12px', textAlign: 'center' }}>Created</th>
+                  <th style={{ padding: '12px', textAlign: 'center' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {games.map((game) => (
+                  <tr key={game._id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <td style={{ padding: '12px', fontWeight: 'bold', fontSize: '16px' }}>
+                      {game.gameCode}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                      L{game.currentLevel} R{game.currentRound}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                      {game.isComplete ? (
+                        <span style={{ 
+                          background: '#10b981', 
+                          color: 'white', 
+                          padding: '4px 12px', 
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>
+                          Complete
+                        </span>
+                      ) : (
+                        <span style={{ 
+                          background: '#3b82f6', 
+                          color: 'white', 
+                          padding: '4px 12px', 
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>
+                          In Progress
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                      {game.isHosted ? (
+                        <span style={{ 
+                          background: '#ef4444', 
+                          color: 'white', 
+                          padding: '4px 12px', 
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>
+                          🔒 Locked
+                        </span>
+                      ) : (
+                        <span style={{ color: '#6b7280', fontSize: '12px' }}>Available</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center', color: '#6b7280', fontSize: '14px' }}>
+                      {new Date(game.createdAt).toLocaleDateString()}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                      {game.isHosted && (
+                        <button 
+                          onClick={() => forceReleaseHost(game.gameCode)}
+                          className="danger"
+                          style={{ fontSize: '12px', padding: '6px 12px' }}
+                        >
+                          Release Host
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

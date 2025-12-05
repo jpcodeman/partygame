@@ -37,8 +37,18 @@ export default function Home() {
   return (
     <div className="container" style={{ maxWidth: '500px', marginTop: '60px' }}>
       <div className="card">
-        <h1 style={{ textAlign: 'center' }}>Party Game</h1>
+        {/* shrink the title dynamically to fit in one line */}
         
+        <h1 style={{ textAlign: 'center', fontSize: '3rem', marginBottom: '0px' }}>Crew Clue</h1>
+        <h1 style={{ textAlign: 'center', fontSize: '3rem', marginBottom: '10px' }}>Who's Who</h1>
+        <h3 style={{ textAlign: 'center', marginBottom: '36px'}}>Who on your crew matches the clue?</h3>
+        <div style={{ background: 'rgba(0,0,0,0.05)', padding: '16px', borderRadius: '12px' }}>
+          <h4 style={{ textAlign: 'left', marginBottom: '16px', color: '#468791ff' }}>Instructions:</h4>
+          <h4 style={{ color: '#468791ff' }}>Review each clue with your crew to choose the true who, even as clues accrue and outdo the previous few being more screwy to chew through</h4>
+        </div>
+      </div>
+      <div className="card">
+        <h1 style={{ textAlign: 'center', marginBottom: '24px', fontSize: '2rem' }}>Join a Game</h1>
         <form onSubmit={handleJoinGame}>
           <label>Game Code</label>
           <input
@@ -65,22 +75,22 @@ export default function Home() {
 
         <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #eee' }}>
           <button 
-            onClick={() => router.push('/admin')}
-            className="secondary"
-            style={{ width: '100%', marginBottom: '12px' }}
-          >
-            Admin Panel
-          </button>
-          
-          <button 
             onClick={() => {
               const code = prompt('Enter game code for host view:');
               if (code) router.push(`/host/${code.toUpperCase()}`);
             }}
             className="secondary"
-            style={{ width: '100%' }}
+            style={{ width: '100%', marginBottom: '12px' }}
           >
             Host View
+          </button>
+
+          <button 
+            onClick={() => router.push('/admin')}
+            className="secondary"
+            style={{ width: '100%' }}
+          >
+            Admin Panel
           </button>
         </div>
       </div>

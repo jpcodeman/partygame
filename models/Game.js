@@ -25,6 +25,7 @@ const GameSchema = new mongoose.Schema({
   currentLevel: { type: Number, default: 1 },
   currentRound: { type: Number, default: 1 },
   rounds: [RoundSchema],
+  hostKey: { type: String, default: null }, // Unique key for the current host session
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

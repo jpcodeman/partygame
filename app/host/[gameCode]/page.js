@@ -17,6 +17,57 @@ export default function HostView() {
   const [countdown, setCountdown] = useState(null);
   const [randomizedLevel3Answers, setRandomizedLevel3Answers] = useState([]);
   const [isPaused, setIsPaused] = useState(false);
+  const [hostKey, setHostKey] = useState(null);
+  const [hostLocked, setHostLocked] = useState(false);
+
+  const acquireHostKey = async () => {
+    const storedKey = localStorage.getItem(`hostKey_${gameCode}`);
+    
+    try {
+      const response = await fetch('/api/games/acquire-host', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameCode, existingKey: storedKey })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setHostKey(data.hostKey);
+        localStorage.setItem(`hostKey_${gameCode}`, data.hostKey);
+        setHostLocked(false);
+        return true;
+      } else if (data.locked) {
+        // Remove invalid stored key
+        if (storedKey) localStorage.removeItem(`hostKey_${gameCode}`);
+        setHostLocked(true);
+        setError('Another host is currently controlling this game. Please wait for them to exit.');
+        return false;
+      } else {
+        setError(data.message);
+        return false;
+      }
+    } catch (err) {
+      setError('Error acquiring host control');
+      return false;
+    }
+  };
+
+  const releaseHostKey = async () => {
+    if (!hostKey) return;
+    
+    try {
+      await fetch('/api/games/release-host', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameCode, hostKey })
+      });
+      // Remove from localStorage after successful release
+      localStorage.removeItem(`hostKey_${gameCode}`);
+    } catch (err) {
+      console.error('Error releasing host key:', err);
+    }
+  };
 
   const loadGame = async () => {
     try {
@@ -49,7 +100,11 @@ export default function HostView() {
 
   useEffect(() => {
     if (gameCode) {
-      loadGame();
+      acquireHostKey().then(success => {
+        if (success) {
+          loadGame();
+        }
+      });
     }
   }, [gameCode]);
 
@@ -122,12 +177,29 @@ export default function HostView() {
     }
   };
 
+  const handleExit = async () => {
+    await releaseHostKey();
+    router.push('/');
+  };
+
   if (error && !game) {
     return (
       <div className="container" style={{ maxWidth: '600px', marginTop: '60px' }}>
         <div className="card">
           <div className="error">{error}</div>
-          <button onClick={() => router.push('/')}>Back to Home</button>
+          {hostLocked ? (
+            <div style={{ marginTop: '16px', display: 'flex', gap: '12px', flexDirection: 'column' }}>
+              <button onClick={async () => {
+                const success = await acquireHostKey();
+                if (success) {
+                  loadGame();
+                }
+              }}>Try Again</button>
+              <button onClick={() => router.push('/')}>Back to Home</button>
+            </div>
+          ) : (
+            <button onClick={() => router.push('/')}>Back to Home</button>
+          )}
         </div>
       </div>
     );
@@ -239,7 +311,7 @@ export default function HostView() {
           )}
 
           <div style={{ marginTop: '32px', display: 'flex', gap: '16px', justifyContent: 'center' }}>
-            <button onClick={() => router.push('/')} style={{ fontSize: '18px', padding: '16px 32px' }}>
+            <button onClick={handleExit} style={{ fontSize: '18px', padding: '16px 32px' }}>
               Back to Home
             </button>
           </div>
@@ -258,7 +330,7 @@ export default function HostView() {
       `}</style>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1>Host View</h1>
-        <button onClick={() => router.push('/')} className="secondary">
+        <button onClick={handleExit} className="secondary">
           Exit Game
         </button>
       </div>
